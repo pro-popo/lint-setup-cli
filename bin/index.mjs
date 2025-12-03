@@ -211,7 +211,7 @@ function mergePackageJson(templateDir) {
 
     if (conflicts.length > 0) {
       console.log(
-        "[eslint-config] 버전 충돌로 인해 기존 버전을 유지한 패키지가 있습니다:"
+        "[eslint-config] 버전이 다른 패키지가 있어 현재 버전을 유지했습니다 (참고용):"
       );
       for (const conflict of conflicts) {
         console.log(
@@ -371,13 +371,16 @@ function ensureVscodeExtensions() {
 
 function buildPrettierConfig(templateStyleDir, type, onExists) {
   try {
+    const templatePrettierName =
+      templateStyleDir === "flat-config" ? "prettier.config.cjs" : ".prettierrc.cjs";
+
     const typePath = path.join(
       __dirname,
       "..",
       "templates",
       templateStyleDir,
       type,
-      "prettier.config.cjs"
+      templatePrettierName
     );
 
     if (!fs.existsSync(typePath)) {
@@ -389,7 +392,8 @@ function buildPrettierConfig(templateStyleDir, type, onExists) {
 
     const finalConfig = require(typePath); // 템플릿 내부에서 base를 require/import 해서 병합한 결과
 
-    const rootPath = path.join(process.cwd(), "prettier.config.cjs");
+    const rootName = templateStyleDir === "flat-config" ? "prettier.config.cjs" : ".prettierrc";
+    const rootPath = path.join(process.cwd(), rootName);
     let targetPath = rootPath;
 
     if (onExists === "skip" && fs.existsSync(rootPath)) {
@@ -402,7 +406,7 @@ function buildPrettierConfig(templateStyleDir, type, onExists) {
         : process.cwd();
       const configDir = path.join(baseDir, "config");
       fs.mkdirSync(configDir, { recursive: true });
-      targetPath = path.join(configDir, "prettier.config.cjs");
+      targetPath = path.join(configDir, rootName);
     }
 
     const fileContent =
@@ -422,7 +426,7 @@ function buildPrettierConfig(templateStyleDir, type, onExists) {
   }
 }
 
-async function buildEslintConfig(templateStyleDir, type, _onExists) {
+async function buildEslintConfig(templateStyleDir, type, onExists) {
   try {
     if (templateStyleDir === "flat-config") {
       return;
@@ -446,12 +450,27 @@ async function buildEslintConfig(templateStyleDir, type, _onExists) {
       // 템플릿 모듈을 require 해서 base + 타입별 설정이 합쳐진 최종 객체를 가져온다.
       const finalConfig = require(typePath);
 
-      const targetPath = path.join(process.cwd(), ".eslintrc.json");
+      const rootPath = path.join(process.cwd(), ".eslintrc.json");
+      let targetPath = rootPath;
+
+      if (onExists === "skip" && fs.existsSync(rootPath)) {
+        return;
+      }
+
+      if (onExists === "keep" && fs.existsSync(rootPath)) {
+        const baseDir = fs.existsSync(path.join(process.cwd(), "src"))
+          ? path.join(process.cwd(), "src")
+          : process.cwd();
+        const configDir = path.join(baseDir, "config");
+        fs.mkdirSync(configDir, { recursive: true });
+        targetPath = path.join(configDir, ".eslintrc.json");
+      }
+
       const fileContent = JSON.stringify(finalConfig, null, 2) + "\n";
 
       fs.writeFileSync(targetPath, fileContent, "utf8");
       console.log(
-        "[eslint-config] .eslintrc.json이 eslintrc 템플릿을 기반으로 생성/갱신되었습니다."
+        `[eslint-config] 설정 파일을 생성합니다: ${path.relative(process.cwd(), targetPath)}`
       );
     }
   } catch (error) {
