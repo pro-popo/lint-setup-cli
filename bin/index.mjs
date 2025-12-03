@@ -88,9 +88,14 @@ async function copyTemplate({ type, template, onExists }) {
   const files = fs.readdirSync(templateDir);
 
   for (const file of files) {
-    // package.json과 prettier.config.cjs는 여기서 복사하지 않고
-    // 아래 mergePackageJson / buildPrettierConfig에서 따로 처리한다.
-    if (file === "package.json" || file === "prettier.config.cjs") {
+    // package.json, prettier.config.cjs, .eslintrc.cjs, .prettierrc.cjs 는
+    // 여기서 직접 복사하지 않고, 아래 전용 빌더에서 처리한다.
+    if (
+      file === "package.json" ||
+      file === "prettier.config.cjs" ||
+      file === ".eslintrc.cjs" ||
+      file === ".prettierrc.cjs"
+    ) {
       continue;
     }
 
@@ -371,8 +376,13 @@ function ensureVscodeExtensions() {
 
 function buildPrettierConfig(templateStyleDir, type, onExists) {
   try {
-    const templatePrettierName =
-      templateStyleDir === "flat-config" ? "prettier.config.cjs" : ".prettierrc.cjs";
+    // eslintrc 템플릿에서는 .prettierrc 파일을 그대로 복사하므로
+    // 별도의 빌드 과정이 필요하지 않다.
+    if (templateStyleDir !== "flat-config") {
+      return;
+    }
+
+    const templatePrettierName = "prettier.config.cjs";
 
     const typePath = path.join(
       __dirname,
@@ -390,9 +400,9 @@ function buildPrettierConfig(templateStyleDir, type, onExists) {
       return;
     }
 
-    const finalConfig = require(typePath); // 템플릿 내부에서 base를 require/import 해서 병합한 결과
+    const finalConfig = require(typePath); // flat-config 템플릿에서 base를 require/import 해서 병합한 결과
 
-    const rootName = templateStyleDir === "flat-config" ? "prettier.config.cjs" : ".prettierrc";
+    const rootName = "prettier.config.cjs";
     const rootPath = path.join(process.cwd(), rootName);
     let targetPath = rootPath;
 
@@ -428,51 +438,9 @@ function buildPrettierConfig(templateStyleDir, type, onExists) {
 
 async function buildEslintConfig(templateStyleDir, type, onExists) {
   try {
-    if (templateStyleDir === "flat-config") {
-      return;
-    } else if (templateStyleDir === "eslintrc") {
-      const typePath = path.join(
-        __dirname,
-        "..",
-        "templates",
-        "eslintrc",
-        type,
-        ".eslintrc.cjs"
-      );
-
-      if (!fs.existsSync(typePath)) {
-        console.warn(
-          "[eslint-config] eslintrc 템플릿을 찾을 수 없어 .eslintrc.json 생성을 건너뜁니다."
-        );
-        return;
-      }
-
-      // 템플릿 모듈을 require 해서 base + 타입별 설정이 합쳐진 최종 객체를 가져온다.
-      const finalConfig = require(typePath);
-
-      const rootPath = path.join(process.cwd(), ".eslintrc.json");
-      let targetPath = rootPath;
-
-      if (onExists === "skip" && fs.existsSync(rootPath)) {
-        return;
-      }
-
-      if (onExists === "keep" && fs.existsSync(rootPath)) {
-        const baseDir = fs.existsSync(path.join(process.cwd(), "src"))
-          ? path.join(process.cwd(), "src")
-          : process.cwd();
-        const configDir = path.join(baseDir, "config");
-        fs.mkdirSync(configDir, { recursive: true });
-        targetPath = path.join(configDir, ".eslintrc.json");
-      }
-
-      const fileContent = JSON.stringify(finalConfig, null, 2) + "\n";
-
-      fs.writeFileSync(targetPath, fileContent, "utf8");
-      console.log(
-        `[eslint-config] 설정 파일을 생성합니다: ${path.relative(process.cwd(), targetPath)}`
-      );
-    }
+    // 현재는 flat-config / eslintrc 모두 템플릿 파일을 그대로 복사하는 방식으로 동작하므로
+    // 별도의 ESLint 설정 빌드 로직은 사용하지 않는다.
+    return;
   } catch (error) {
     console.error(
       "[eslint-config] ESLint 설정 파일을 생성하는 중 오류가 발생했습니다.",

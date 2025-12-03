@@ -1,18 +1,15 @@
 {
   "devDependencies": {
     "typescript": "^5.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "eslint": "^9.0.0",
-    "@eslint/eslintrc": "^3.0.0",
-    "eslint-config-prettier": "^10.0.0",
-    "eslint-plugin-prettier": "^5.0.0",
-    "eslint-plugin-import": "^2.31.0",
-    "prettier": "^3.0.0",
-    "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-config-next": "^15.0.0",
-    "prettier-plugin-tailwindcss": "^0.6.11"
+    "@typescript-eslint/parser": "^7.5.0",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "eslint": "^8",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-import": "^2.29.1",
+    "prettier": "^2.8.8",
+    "eslint-config-next": "14.1.4",
+    "prettier-plugin-tailwindcss": "^0.4.1"
   }
 }
 
